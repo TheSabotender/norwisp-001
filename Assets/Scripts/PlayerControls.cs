@@ -126,13 +126,13 @@ public class PlayerControls : MonoBehaviour
         if (Input.GetMouseButton(0))
         {
             //Apply uppwards velocity at from the left LeftThrust
-            rb.AddForceAtPosition(LeftThrust.transform.up * maxThrust, LeftThrust.transform.position);
+            rb.AddForceAtPosition(LeftThrust.transform.up * maxThrust * Time.deltaTime, LeftThrust.transform.position);
         }
         //If mouse right down
         if (Input.GetMouseButton(1))
         {
             //Apply uppwards velocity at from the right RightThrust
-            rb.AddForceAtPosition(RightThrust.transform.up * maxThrust, RightThrust.transform.position);
+            rb.AddForceAtPosition(RightThrust.transform.up * maxThrust * Time.deltaTime, RightThrust.transform.position);
         }
 
 
