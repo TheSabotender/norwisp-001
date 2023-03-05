@@ -6,6 +6,7 @@ using UnityEngine;
 [RequireComponent(typeof(Rigidbody))]
 public class PlayerControls : MonoBehaviour
 {
+    
 
     public float maxThrust = 10f;
     public GameObject LeftThrust, RightThrust;
@@ -13,6 +14,9 @@ public class PlayerControls : MonoBehaviour
     public float rolloverTimeout = 0.5f;
     public float pickupRange = 0.6f;
     private float timeAtRest = 0f;
+    public AnimationCurve ThrustCurve;
+    public float leftThrustCurveT = 0.0f;
+    public float rightThrustCurveT = 0.0f;
 
     private Stackable cargo;
 
@@ -37,7 +41,7 @@ public class PlayerControls : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        HandleVelocity();
+        HandleVelocityInput();
         HandleCargo();
    
         //If the player is upside down and resting, add to the timeAtRest
@@ -47,13 +51,41 @@ public class PlayerControls : MonoBehaviour
             timeAtRest += Time.deltaTime;
         }
         //if time at rest is greater than the timeout, reset the player rotation
-        if (timeAtRest > rolloverTimeout)
+        if (timeAtRest > rolloverTimeout || Input.GetKeyDown(KeyCode.R))
         {
             transform.rotation = Quaternion.identity;
             timeAtRest = 0f;
         }
 
     }
+
+    private void HandleVelocityInput()
+    {
+
+        if (Input.GetMouseButtonUp(0))
+        {
+            leftThrustCurveT = 0.0f;
+        }
+        if (Input.GetMouseButton(0))
+        {
+            leftThrustCurveT += Time.deltaTime;
+        }
+        if (Input.GetMouseButtonUp(1))
+        {
+            rightThrustCurveT = 0.0f;
+        }
+        if (Input.GetMouseButton(1))
+        {
+            rightThrustCurveT+= Time.deltaTime;
+        }
+    }
+
+    private void FixedUpdate()
+    {
+        HandleVelocity();
+        HandleCargo();
+    }
+
     private float grabCooldown = 0;
     private void HandleCargo()
     {
@@ -122,21 +154,10 @@ public class PlayerControls : MonoBehaviour
 
     void HandleVelocity()
     {
-        //If mouse left down
-        if (Input.GetMouseButton(0))
-        {
-            //Apply uppwards velocity at from the left LeftThrust
-            rb.AddForceAtPosition(LeftThrust.transform.up * maxThrust * Time.deltaTime, LeftThrust.transform.position);
-        }
-        //If mouse right down
-        if (Input.GetMouseButton(1))
-        {
-            //Apply uppwards velocity at from the right RightThrust
-            rb.AddForceAtPosition(RightThrust.transform.up * maxThrust * Time.deltaTime, RightThrust.transform.position);
-        }
-
-
+        float leftThrustForce = ThrustCurve.Evaluate(leftThrustCurveT) * maxThrust;
+        float rightThrustForce = ThrustCurve.Evaluate(rightThrustCurveT) * maxThrust;
+        rb.AddForceAtPosition(LeftThrust.transform.up *  leftThrustForce  * Time.deltaTime, LeftThrust.transform.position);
+        rb.AddForceAtPosition(RightThrust.transform.up * rightThrustForce * Time.deltaTime, RightThrust.transform.position);
 
     }
 }
-
