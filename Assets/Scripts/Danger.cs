@@ -12,6 +12,9 @@ public class Danger : MonoBehaviour
         {
             //reboot/respawn
             SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
+        } else if (other.CompareTag("Cargo"))
+        {
+            Destroy(other.gameObject);
         }
     }
 }

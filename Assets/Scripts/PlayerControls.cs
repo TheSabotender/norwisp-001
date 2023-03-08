@@ -9,16 +9,21 @@ public class PlayerControls : MonoBehaviour
     
 
     public float maxThrust = 10f;
-    public GameObject LeftThrust, RightThrust;
     public GameObject CargoClaw;
     public float rolloverTimeout = 0.5f;
     public float pickupRange = 0.6f;
-    private float timeAtRest = 0f;
     public AnimationCurve ThrustCurve;
-    public float leftThrustCurveT = 0.0f;
-    public float rightThrustCurveT = 0.0f;
 
+    public ParticleSystem leftEmitter, rightEmitter;
+    public JetAudio leftJetAudio, rightJetAudio;
+
+    private ParticleSystem.EmissionModule leftEm, rightEm;
+
+    private bool leftThrust;
+    private bool rightThrust;
+    private float thrustDuration;
     private Stackable cargo;
+    private bool isDropping;
 
     Rigidbody rb;
     Animator anim;
@@ -35,6 +40,13 @@ public class PlayerControls : MonoBehaviour
         {
             anim = GetComponent<Animator>();
         }
+
+        leftEm = leftEmitter.emission;
+        rightEm = rightEmitter.emission;
+
+        leftEm.enabled = false;
+        rightEm.enabled = false;
+        isDropping = false;
     }
 
 
@@ -42,122 +54,149 @@ public class PlayerControls : MonoBehaviour
     void Update()
     {
         HandleVelocityInput();
-        HandleCargo();
-   
-        //If the player is upside down and resting, add to the timeAtRest
-        //Use the dot product to determine direction
-        if (Vector3.Dot(transform.up, Vector3.up) < -0.5 && rb.velocity.magnitude < 0.1)
-        {
-            timeAtRest += Time.deltaTime;
-        }
-        //if time at rest is greater than the timeout, reset the player rotation
-        if (timeAtRest > rolloverTimeout || Input.GetKeyDown(KeyCode.R))
-        {
-            transform.rotation = Quaternion.identity;
-            timeAtRest = 0f;
-        }
-
+        HandleCargo();  
     }
 
     private void HandleVelocityInput()
     {
-
+        //Left Thruster
+        leftThrust = Input.GetMouseButton(0);
+        leftEm.enabled = leftThrust;
         if (Input.GetMouseButtonUp(0))
-        {
-            leftThrustCurveT = 0.0f;
-        }
-        if (Input.GetMouseButton(0))
-        {
-            leftThrustCurveT += Time.deltaTime;
-        }
+            leftJetAudio.Stop();
+        if (Input.GetMouseButtonDown(0))
+            leftJetAudio.Play();
+
+        //Right Thruster
+        rightThrust = Input.GetMouseButton(1);
+        rightEm.enabled = rightThrust;
         if (Input.GetMouseButtonUp(1))
-        {
-            rightThrustCurveT = 0.0f;
-        }
-        if (Input.GetMouseButton(1))
-        {
-            rightThrustCurveT+= Time.deltaTime;
-        }
+            leftJetAudio.Stop();
+        if (Input.GetMouseButtonDown(1))
+            rightJetAudio.Play();
     }
 
     private void FixedUpdate()
     {
+        rb.AddForce(CustomGravity.GetDirection(transform.position), ForceMode.Force);
+
         HandleVelocity();
-        HandleCargo();
     }
 
-    private float grabCooldown = 0;
     private void HandleCargo()
     {
-        if (grabCooldown > 0)
-        {
-            grabCooldown -= Time.deltaTime;
-        }
-        //If the player is holding a stackable object, drop the stackable object
-        if (cargo != null && Input.GetKeyDown(KeyCode.Space))
-        {
-            DropStackable();
-            //Block the player from picking up another stackable object for a short time
-            grabCooldown = 0.5f;
+        if (isDropping)
+            return;
 
-        }
-        //If on top of a stackable object, pick up the stackable object
-        if (Input.GetKey(KeyCode.Space) && grabCooldown <= 0)
-        {   
-           
-            //Set the parameter "grabbing" to true
-            anim.SetBool("grabbing", true);
-
-            RaycastHit hit;
-            if (Physics.Raycast(CargoClaw.transform.position, -CargoClaw.transform.up, out hit, pickupRange, ~LayerMask.NameToLayer("Player")) && cargo == null)
+        //If the player is holding a stackable object
+        if (cargo != null)
+        {
+            if (Input.GetKeyDown(KeyCode.Space))
             {
-                if (hit.collider.gameObject.GetComponent<Stackable>())
-                {
-                    PickUpStackable(hit.collider.gameObject.GetComponent<Stackable>());
-                }
+                StartCoroutine(DropStackable());
             }
         }
+
+        //if the player has no stackable object
         else
         {
-            //Set the parameter "grabbing" to false
-            anim.SetBool("grabbing", false);
-        }
+            if (Input.GetKey(KeyCode.Space))
+            {
+                //Set the parameter "grabbing" to true
+                anim.SetBool("grabbing", true);
 
+                //If on top of a stackable object, pick up the stackable object
+                int layerMask = 1 << LayerMask.NameToLayer("SpaceObject");
+                Collider[] objects = Physics.OverlapSphere(CargoClaw.transform.position, 1, layerMask);
+                if (objects.Length > 0)
+                {
+                    foreach(Collider c in objects)
+                    {
+                        Stackable s = c.gameObject.GetComponent<Stackable>();
+                        if (s != null)
+                        {
+                            PickUpStackable(s);
+                            anim.SetBool("grabbing", false);
+                            break;
+                        }
+                        else
+                        {
+                            Debug.Log($"SpaceObject {c.gameObject.name} is not Stackable");
+                        }
+                    }
+                }
+            }
+            else
+            {
+                //Set the parameter "grabbing" to false
+                anim.SetBool("grabbing", false);
+            }
+        }
     }
 
     private void PickUpStackable(Stackable stackable)
     {
         cargo = stackable;
         //Add the mass of the stackable to the player, disable the rigidbody of the stackable
-        rb.mass += cargo.GetComponent<Rigidbody>().mass;
+        rb.mass += stackable.mass;
 
         //Attach the stackable to the cargo claw
-        cargo.gameObject.layer = LayerMask.NameToLayer("Player");
         cargo.CasheRigidbody();
-        cargo.transform.parent = transform;
-        cargo.transform.localPosition = CargoClaw.transform.localPosition;
+        cargo.transform.parent = CargoClaw.transform;
+        cargo.transform.localPosition = Vector3.zero;
     }
 
-    private void DropStackable()
+    private IEnumerator DropStackable()
     {
+        isDropping = true;
+        anim.SetBool("grabbing", true);
+
+        float dropTime = 0;
+        while (dropTime <= 0.5f)
+        {
+            dropTime += Time.deltaTime;
+            yield return null;
+        }
+
+        anim.SetBool("grabbing", true);
+
         //Detach the stackable from the cargo claw
-        cargo.gameObject.layer = LayerMask.NameToLayer("Default");
-        cargo.RestoreRigidbody();
         cargo.transform.parent = Stackable.stackableParent;
+        cargo.RestoreRigidbody();        
 
         //Remove the mass of the stackable from the player, enable the rigidbody of the stackable
-        rb.mass -= cargo.GetComponent<Rigidbody>().mass;
+        rb.mass -= cargo.mass;
 
         cargo = null;
-
+        isDropping = false;
     }
 
     void HandleVelocity()
     {
-        float leftThrustForce = ThrustCurve.Evaluate(leftThrustCurveT) * maxThrust;
-        float rightThrustForce = ThrustCurve.Evaluate(rightThrustCurveT) * maxThrust;
-        rb.AddForceAtPosition(LeftThrust.transform.up *  leftThrustForce  * Time.deltaTime, LeftThrust.transform.position);
-        rb.AddForceAtPosition(RightThrust.transform.up * rightThrustForce * Time.deltaTime, RightThrust.transform.position);
+        //Both thrusters
+        if (leftThrust && rightThrust)
+        {
+            thrustDuration += Time.deltaTime;
+            float thrust = ThrustCurve.Evaluate(thrustDuration) * maxThrust;
+            rb.AddForceAtPosition(transform.up * thrust * Time.deltaTime, transform.position);
+        }
+
+        //Only one thruster
+        else if (leftThrust)
+        {
+            rb.AddTorque(new Vector3(0, 0, -Time.deltaTime) * maxThrust, ForceMode.Acceleration);
+        }
+        else if (rightThrust)
+        {
+            rb.AddTorque(new Vector3(0, 0, Time.deltaTime) * maxThrust, ForceMode.Acceleration);
+        }
+
+        //No thrusters
+        else
+        {
+            thrustDuration = 0;
+        }
+        
 
     }
 }
