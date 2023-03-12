@@ -13,8 +13,8 @@ public class BonusObject : MonoBehaviour
         if (other.CompareTag("Player"))
         {
             //reboot/respawn
-            //just pickup/eat
-            gameObject.SetActive(false);
+            //just pickup/eat to get points
+            Destroy(gameObject);
             OnPointScored?.Invoke();
         }
     }

@@ -24,7 +24,7 @@ public class GameGod : MonoBehaviour
 
     void OnCargoScored()
     {
-        score+=10;
+        score += 10;
     }
     void OnPointScored()
     {
@@ -33,7 +33,7 @@ public class GameGod : MonoBehaviour
 
 
     // Update is called once per frame
-    void Update()
+    private void Update()
     {
         scoreText.text = $"{score} points";
     }

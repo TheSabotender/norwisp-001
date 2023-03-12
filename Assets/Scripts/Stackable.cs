@@ -31,7 +31,7 @@ public class Stackable : MonoBehaviour
     }
 
     //If stackable parent is null find stackable parent in the scene
-    static public Transform stackableParent
+    public static Transform stackableParent
     {
         get
         {

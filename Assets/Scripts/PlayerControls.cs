@@ -59,20 +59,29 @@ public class PlayerControls : MonoBehaviour
 
     private void HandleVelocityInput()
     {
+        var leftHold = Input.GetMouseButton(0) || Input.GetKey(KeyCode.LeftArrow) || Input.GetKey(KeyCode.A) || Input.GetKey(KeyCode.W) || Input.GetKey(KeyCode.UpArrow);
+        var leftDown = Input.GetMouseButtonDown(0) || Input.GetKeyDown(KeyCode.LeftArrow) || Input.GetKeyDown(KeyCode.A) || Input.GetKeyDown(KeyCode.W) || Input.GetKeyDown(KeyCode.UpArrow);
+        var leftUp = Input.GetMouseButtonUp(0) || Input.GetKeyUp(KeyCode.LeftArrow) || Input.GetKeyUp(KeyCode.A) || Input.GetKeyUp(KeyCode.W) || Input.GetKeyUp(KeyCode.UpArrow);
+
+        var rightHold = Input.GetMouseButton(1) || Input.GetKey(KeyCode.RightArrow) || Input.GetKey(KeyCode.D) || Input.GetKey(KeyCode.W) || Input.GetKey(KeyCode.UpArrow);
+        var rightDown = Input.GetMouseButtonDown(1) || Input.GetKeyDown(KeyCode.RightArrow) || Input.GetKeyDown(KeyCode.D) || Input.GetKeyDown(KeyCode.W) || Input.GetKeyDown(KeyCode.UpArrow);
+        var rightUp = Input.GetMouseButtonUp(1) || Input.GetKeyUp(KeyCode.RightArrow) || Input.GetKeyUp(KeyCode.D) || Input.GetKeyUp(KeyCode.W) || Input.GetKeyUp(KeyCode.UpArrow);
+
+
         //Left Thruster
-        leftThrust = Input.GetMouseButton(0);
+        leftThrust = leftHold;
         leftEm.enabled = leftThrust;
-        if (Input.GetMouseButtonUp(0))
+        if (leftUp)
             leftJetAudio.Stop();
-        if (Input.GetMouseButtonDown(0))
+        if (leftDown)
             leftJetAudio.Play();
 
         //Right Thruster
-        rightThrust = Input.GetMouseButton(1);
+        rightThrust = rightHold;
         rightEm.enabled = rightThrust;
-        if (Input.GetMouseButtonUp(1))
+        if (rightUp)
             leftJetAudio.Stop();
-        if (Input.GetMouseButtonDown(1))
+        if (rightDown)
             rightJetAudio.Play();
     }
 
