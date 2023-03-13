@@ -3,6 +3,7 @@ using UnityEngine;
 public class Stackable : MonoBehaviour
 {
     private static Transform _stackableParent;
+    public Vector3 initialVelocity;
 
     private Collider _col;
     private Collider col
@@ -87,6 +88,7 @@ public class Stackable : MonoBehaviour
     {
         //Set the stackable parent to the stackable parent in the scene
         transform.parent = stackableParent;
+        rb.AddForce(initialVelocity, ForceMode.Impulse);
     }
 
     private void FixedUpdate()

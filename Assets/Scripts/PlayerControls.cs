@@ -2,6 +2,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.UI;
 
 [RequireComponent(typeof(Rigidbody))]
 public class PlayerControls : MonoBehaviour
@@ -27,6 +28,12 @@ public class PlayerControls : MonoBehaviour
 
     Rigidbody rb;
     Animator anim;
+
+    public Image vsPos;
+    public Image vsNeg;
+    public TMPro.TMP_Text verticalSpeedText;
+    public TMPro.TMP_Text orbitalSpeedText;
+    public TMPro.TMP_Text gravityForceText;
 
 
     public void Start()
@@ -90,6 +97,23 @@ public class PlayerControls : MonoBehaviour
         rb.AddForce(CustomGravity.GetDirection(transform.position), ForceMode.Force);
 
         HandleVelocity();
+    }
+
+    public void calculateOrbitalVelocity()
+    {
+        var craftVelocity = rb.velocity;
+        var gravityVector = CustomGravity.GetDirection(transform.position);
+
+        var verticalVelocity = (float)((Vector3.Dot(craftVelocity, gravityVector)) / gravityVector.magnitude) * -1.0f;
+        var orbitalVelocity = (float)Math.Sqrt((craftVelocity.magnitude * craftVelocity.magnitude) - (verticalVelocity * verticalVelocity));
+
+        float sensitivity = 25f;
+        vsPos.fillAmount = Mathf.Min(Mathf.Max(0f, verticalVelocity) / sensitivity, 0.25f);
+        vsNeg.fillAmount = Mathf.Min(-Mathf.Min(0f, verticalVelocity) / sensitivity, 0.25f);
+
+        verticalSpeedText.text = verticalVelocity.ToString("0.0 m/s");
+        orbitalSpeedText.text = orbitalVelocity.ToString("0.0 m/s");
+        gravityForceText.text = gravityVector.magnitude.ToString("0.0 m/s");
     }
 
     private void HandleCargo()
@@ -205,7 +229,8 @@ public class PlayerControls : MonoBehaviour
         {
             thrustDuration = 0;
         }
-        
 
+
+        calculateOrbitalVelocity();
     }
 }

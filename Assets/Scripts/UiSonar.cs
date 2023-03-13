@@ -61,7 +61,9 @@ public class UiSonar : MonoBehaviour
             var arrowScale = Mathf.Lerp(1, 0.2f, distance / 100);
 
             waypointVisual.SetArrowScale(arrowScale);
-            waypointVisual.SetColor(GetCategoryColor(waypointCategory).WithAlpha(1));
+            var c = GetCategoryColor(waypointCategory);
+            c.a = 1f;
+            waypointVisual.SetColor(c);
             waypointVisual.SetText($"{waypointCategory}: {distance:N0}");
         }
     }
