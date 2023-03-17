@@ -6,13 +6,15 @@ using UnityEngine.SceneManagement;
 
 public class Danger : MonoBehaviour
 {
+    [SerializeField] private bool _destroysCargo;
+
     private void OnTriggerEnter(Collider other)
     {
         if (other.CompareTag("Player"))
         {
             //reboot/respawn
             SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
-        } else if (other.CompareTag("Cargo"))
+        } else if (_destroysCargo && (other.CompareTag("Cargo") || other.CompareTag("SuperCargo")))
         {
             Destroy(other.gameObject);
         }

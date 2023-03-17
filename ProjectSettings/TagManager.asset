@@ -5,6 +5,8 @@ TagManager:
   serializedVersion: 2
   tags:
   - Cargo
+  - Hazard
+  - SuperCargo
   layers:
   - Default
   - TransparentFX

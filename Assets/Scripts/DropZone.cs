@@ -9,6 +9,7 @@ using UnityEngine.Scripting;
 public class DropZone : MonoBehaviour
 {
     public static Action CargoScored;
+    public static Action SuperCargoScored;
     public float stillnessRequiredToScoreCargo = 0.5f;
     private List<Rigidbody> scoredCargos;
     private List<Rigidbody> potentialCargos;
@@ -30,7 +31,7 @@ public class DropZone : MonoBehaviour
 
     private void OnTriggerStay(Collider other)
     {
-        if (other.CompareTag("Cargo"))
+        if (other.CompareTag("Cargo") || other.CompareTag("SuperCargo"))
         {
             var rb = other.GetComponent<Rigidbody>();
             if (rb == null)
@@ -46,7 +47,15 @@ public class DropZone : MonoBehaviour
                         potentialCargosStillness[rb] += Time.deltaTime;
                         if (potentialCargosStillness[rb] >  stillnessRequiredToScoreCargo)
                         {
-                            CargoScored?.Invoke();
+                            if (other.CompareTag("SuperCargo"))
+                            {
+                                SuperCargoScored?.Invoke();
+                            }
+                            else
+                            {
+                                CargoScored?.Invoke();
+                            }
+                            
                             scoredCargos.Add(rb);
                             potentialCargosStillness.Remove(rb);
                             potentialCargos.Remove(rb);
